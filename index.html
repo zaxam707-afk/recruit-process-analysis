@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>採用プロセス推移分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f6f6f4; --surface:#fcfcfb; --border:#e3e2dd; --grid:#ecebe7;
+  --text:#0b0b0b; --text2:#52514e; --muted:#85837d;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --total:#3b3a37;
+  --shade:rgba(42,120,214,.07); --accent:#2a78d6;
+  --good:#008300; --bad:#c43b3a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#121211; --surface:#1a1a19; --border:#33322f; --grid:#2a2a28;
+    --text:#f0efec; --text2:#c3c2b7; --muted:#8e8c85;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --total:#e6e5e0;
+    --shade:rgba(57,135,229,.12); --accent:#5598e7;
+    --good:#4fb34f; --bad:#e66767;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121211; --surface:#1a1a19; --border:#33322f; --grid:#2a2a28;
+  --text:#f0efec; --text2:#c3c2b7; --muted:#8e8c85;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --total:#e6e5e0;
+  --shade:rgba(57,135,229,.12); --accent:#5598e7;
+  --good:#4fb34f; --bad:#e66767;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",system-ui,sans-serif;line-height:1.7;font-size:15px}
+.wrap{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:1.6rem;margin:0 0 4px;letter-spacing:.02em}
+h2{font-size:1.15rem;margin:0 0 4px}
+.sub{color:var(--text2);font-size:.9rem;margin:0}
+.meta{color:var(--muted);font-size:.82rem;margin-top:8px}
+section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 22px 18px;margin-top:20px}
+.lead{font-size:.95rem;color:var(--text2);margin:2px 0 14px}
+.verdict{border-left:4px solid var(--accent);padding:4px 0 4px 16px;margin:14px 0 4px}
+.verdict p{margin:0 0 8px}
+.verdict strong{color:var(--text)}
+ul.find{margin:8px 0 0;padding-left:1.2em}
+ul.find li{margin-bottom:6px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px}
+.kpi{border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.kpi .lab{font-size:.8rem;color:var(--text2)}
+.kpi .row{display:flex;align-items:baseline;gap:8px;margin-top:4px;flex-wrap:wrap}
+.kpi .from{color:var(--muted);font-size:.95rem;font-variant-numeric:tabular-nums}
+.kpi .to{font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:.82rem;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi .d.up{color:var(--good)} .kpi .d.dn{color:var(--bad)} .kpi .d.flat{color:var(--muted)}
+.kpi .note{font-size:.75rem;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-top:10px}
+.chartbox{position:relative}
+.chartbox h3{font-size:.92rem;margin:0 0 2px}
+.chartbox .def{font-size:.75rem;color:var(--muted);margin:0 0 6px}
+.cv{position:relative;height:240px}
+.cv.tall{height:300px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--text2);margin:6px 0 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px}
+.legend i.sq{width:10px;height:10px;border-radius:3px}
+.legend i.dash{background:none!important;border-top:2px dashed var(--total);height:0}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.tabs button{font:inherit;font-size:.83rem;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--text);color:var(--surface);border-color:var(--text)}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-numeric:tabular-nums;min-width:640px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
+thead th{color:var(--text2);font-weight:600;border-bottom:1px solid var(--border)}
+tr.rate td{color:var(--text2);font-size:.8rem}
+tr.rate td:first-child{padding-left:22px}
+tr.grp td{font-weight:700}
+td.after,th.after{background:var(--shade)}
+td.na{color:var(--muted)}
+.caveat{font-size:.82rem;color:var(--text2)}
+.caveat li{margin-bottom:5px}
+.toggle{position:fixed;top:12px;right:12px;font:inherit;font-size:.78rem;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer}
+@media (max-width:560px){.wrap{padding-top:52px}section{padding:16px 14px}.cv{height:220px}h1{font-size:1.3rem}}
+</style>
+</head>
+<body>
+<button class="toggle" id="themeBtn" type="button">表示切替</button>
+<div class="wrap">
+  <header>
+    <h1>採用プロセス推移分析（2026年4月〜9月・媒体別）</h1>
+    <p class="sub">7月以降の「稼働時間45時間以上」要件への変更で、選考プロセスに変化が出たかを確認する</p>
+    <p class="meta">出典：【6/1-】ver2 マケ応募管理シート（2026/10/15 取得）／集計：応募月コホート（その月に応募した人がどこまで進んだか）</p>
+  </header>
+
+  <section>
+    <h2>結論</h2>
+    <div class="verdict">
+      <p><strong>変化はあった。入口（書類選考）が絞られ、採用後の稼働前辞退が大きく減った。一方、応募から採用に至る割合はほぼ横ばい。</strong></p>
+      <ul class="find">
+        <li><strong>書類通過率が下がった</strong>：Airwork で 48.3%（5〜6月）→ 41.1%（7〜8月）→ 34.3%（9月）。書類不合格率は 25.2% → 34.0% → 41.4% に上昇。45h要件で書類段階の足切りが厳しくなったと読める。</li>
+        <li><strong>面接に進んだ人の合格率はむしろ上がった</strong>：Airwork 48.5% → 53.5%（7〜8月）。事前に絞られた分、面接の歩留まりが良くなっている。</li>
+        <li><strong>稼働前辞退が大きく減った</strong>：採用から30日以内の辞退は 4〜6月採用で 25〜33% → 7月採用 17% → 8月採用 3% → 9月採用 12%。45h要件の狙い（稼働意欲の高い人を採る）に合う動き。</li>
+        <li><strong>応募→採用率は横ばい</strong>：全体 10.6% → 11.6%（7〜8月）。入口が絞られた分を面接合格率の上昇が打ち消している。採用数（採用日基準）が月28〜44人 → 59〜67人に増えたのは、応募数の増加（月300→700件前後）による。</li>
+        <li><strong>注意すべき悪化</strong>：面接ドタキャン率が 14.2% → 18.7%（7〜8月）→ 29.1%（9月）と上昇。マイナビバイト（7月〜）の書類通過率が 20%前後と低く、全体の数字を押し下げている。</li>
+      </ul>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <p class="meta">KPI は Airwork（4〜9月を通して出稿がある唯一の媒体）で比較。媒体構成の変化（7月にマイナビバイト追加、求人ボックス・indeed 終了）の影響を除くため。比較：5〜6月 → 7〜8月。9月応募分は面接・採用がまだ一部進行中のため除外（4月は面接結果の記録が無いため除外）。</p>
+  </section>
+
+  <section>
+    <h2>① 応募数の推移（媒体別）</h2>
+    <p class="lead">7月からマイナビバイトが加わり、応募総数は 4月244件 → 9月748件 に増加。求人ボックスは7月、indeed は4月で終了。</p>
+    <div class="legend" id="lgBar"></div>
+    <div class="cv tall"><canvas id="cApp"></canvas></div>
+  </section>
+
+  <section>
+    <h2>①-2 採用数の推移（媒体別）</h2>
+    <p class="lead">採用日の月で集計。4〜6月は月28〜44人、7月以降は月59〜67人。7月以降もほとんどが Airwork 経由で、マイナビバイト経由は月3〜11人。</p>
+    <div class="legend" id="lgHire"></div>
+    <div class="cv tall"><canvas id="cHire"></canvas></div>
+    <div class="tblwrap" style="margin-top:12px"><table id="tHire"></table></div>
+  </section>
+
+  <section>
+    <h2>② 選考ステップごとの通過率の推移（媒体別）</h2>
+    <p class="lead">応募月ごとに、各ステップの通過率を媒体別に比較。網掛けが45h要件の適用後（7月〜）。母数が15件未満の点は表示していない。</p>
+    <div class="legend" id="lgLine"></div>
+    <div class="grid2" id="rateCharts"></div>
+  </section>
+
+  <section>
+    <h2>③ 採用後の稼働前辞退（採用月別）</h2>
+    <p class="lead">採用日から30日以内に稼働前辞退した人の割合。9月は 9/30 採用分まで含む。ただし 9/16 以降に採用した人は 10/15 時点でまだ30日たっていないため、9月の値は今後増える可能性がある。</p>
+    <div class="cv"><canvas id="cDecl"></canvas></div>
+    <div class="tblwrap" style="margin-top:12px"><table id="tDecl"></table></div>
+  </section>
+
+  <section>
+    <h2>④ 応募月コホート 詳細表</h2>
+    <p class="lead">その月に応募した人が、10/15 時点でどこまで進んだか。網掛け列が45h要件の適用後。</p>
+    <div class="tabs" id="tabsCoh" role="group" aria-label="媒体"></div>
+    <div class="tblwrap"><table id="tCoh"></table></div>
+  </section>
+
+  <section>
+    <h2>⑤ 月別の発生件数（イベント基準）</h2>
+    <p class="lead">各ステップがその月に何件起きたか（書類通過日・面接日・採用日の月で計上）。月ごとの業務量の推移を見る用。率の比較には ④ を使う。</p>
+    <div class="tabs" id="tabsEv" role="group" aria-label="媒体"></div>
+    <div class="tblwrap"><table id="tEv"></table></div>
+  </section>
+
+  <section>
+    <h2>集計の定義と注意点</h2>
+    <ul class="caveat">
+      <li><strong>媒体</strong>：Airwork（「Airwork：面接希望」を含む）／求人ボックス／マイナビバイト／indeed／その他（クラウドワークス、TEL問い合わせ、リファラル採用など）。</li>
+      <li><strong>書類通過</strong>＝書類通過日あり。<strong>書類不合格</strong>＝書類不合格フラグ。どちらも無い人（書類未判定・連絡途絶など）が各月 3割前後いる。</li>
+      <li><strong>面接設定</strong>＝面接日あり。<strong>面接実施</strong>＝結果が「採用／不合格／保留」または採用日あり。<strong>ドタキャン</strong>＝結果「不参加(ドタキャン)」。<strong>採用</strong>＝採用日あり または 結果「採用」。</li>
+      <li><strong>4月応募分は「結果」列（ドタキャン・辞退）がほぼ未記入</strong>のため、ドタキャン率・面接実施率の比較からは外している。</li>
+      <li><strong>9月応募分は未確定が残る</strong>：9月応募のうち40件の面接は10月に実施（一部は結果待ち）。採用数・合格率は今後増える可能性がある。</li>
+      <li><strong>稼働前辞退</strong>＝「稼働前辞退理由」の記入あり。辞退の記入が後追いで入る運用だと、直近月ほど少なく出る点に注意。</li>
+      <li>7月応募分の一部は、新しい面接評価項目（2026/7/28〜、MUST①「稼働時間要件（45h以上）」を含む）で評価されている。この項目で 0〜1点だった人の採用は 7〜9月で 1件のみ。</li>
+      <li>媒体構成が月ごとに大きく違う（4月=indeed、5〜7月=求人ボックス、7月〜=マイナビバイト）。全体の数字の変化には媒体構成の影響が混ざるため、前後比較は Airwork を基準にしている。</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const DATA = {"coh": {"2026/04|全体": {"app": 244, "doc": 113, "docng": 78, "itv": 100, "done": 75, "noshow": 0, "decl": 0, "fail": 44, "hired": 30, "predecl": 19, "agree": 10, "start": 1, "alert45": 5}, "2026/04|Airwork": {"app": 170, "doc": 74, "docng": 61, "itv": 65, "done": 45, "noshow": 0, "decl": 0, "fail": 31, "hired": 13, "predecl": 8, "agree": 5, "start": 0, "alert45": 4}, "2026/04|求人ボックス": {"app": 2, "doc": 0, "docng": 2, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/04|マイナビバイト": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/04|indeed": {"app": 63, "doc": 34, "docng": 14, "itv": 30, "done": 25, "noshow": 0, "decl": 0, "fail": 10, "hired": 15, "predecl": 10, "agree": 4, "start": 1, "alert45": 0}, "2026/04|その他": {"app": 9, "doc": 5, "docng": 1, "itv": 5, "done": 5, "noshow": 0, "decl": 0, "fail": 3, "hired": 2, "predecl": 1, "agree": 1, "start": 0, "alert45": 1}, "2026/05|全体": {"app": 298, "doc": 127, "docng": 84, "itv": 104, "done": 64, "noshow": 9, "decl": 4, "fail": 38, "hired": 27, "predecl": 14, "agree": 9, "start": 1, "alert45": 38}, "2026/05|Airwork": {"app": 206, "doc": 98, "docng": 50, "itv": 79, "done": 52, "noshow": 5, "decl": 3, "fail": 30, "hired": 23, "predecl": 11, "agree": 7, "start": 1, "alert45": 30}, "2026/05|求人ボックス": {"app": 84, "doc": 25, "docng": 31, "itv": 21, "done": 10, "noshow": 4, "decl": 1, "fail": 7, "hired": 3, "predecl": 2, "agree": 1, "start": 0, "alert45": 8}, "2026/05|マイナビバイト": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/05|indeed": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/05|その他": {"app": 8, "doc": 4, "docng": 3, "itv": 4, "done": 2, "noshow": 0, "decl": 0, "fail": 1, "hired": 1, "predecl": 1, "agree": 1, "start": 0, "alert45": 0}, "2026/06|全体": {"app": 400, "doc": 180, "docng": 101, "itv": 163, "done": 97, "noshow": 29, "decl": 42, "fail": 50, "hired": 47, "predecl": 15, "agree": 22, "start": 0, "alert45": 182}, "2026/06|Airwork": {"app": 278, "doc": 136, "docng": 72, "itv": 122, "done": 80, "noshow": 16, "decl": 33, "fail": 39, "hired": 41, "predecl": 13, "agree": 21, "start": 0, "alert45": 138}, "2026/06|求人ボックス": {"app": 122, "doc": 44, "docng": 29, "itv": 41, "done": 17, "noshow": 13, "decl": 9, "fail": 11, "hired": 6, "predecl": 2, "agree": 1, "start": 0, "alert45": 44}, "2026/06|マイナビバイト": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/06|indeed": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/06|その他": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/07|全体": {"app": 500, "doc": 204, "docng": 176, "itv": 188, "done": 131, "noshow": 32, "decl": 35, "fail": 67, "hired": 65, "predecl": 11, "agree": 31, "start": 0, "alert45": 47}, "2026/07|Airwork": {"app": 393, "doc": 171, "docng": 133, "itv": 156, "done": 112, "noshow": 23, "decl": 29, "fail": 58, "hired": 55, "predecl": 10, "agree": 27, "start": 0, "alert45": 39}, "2026/07|求人ボックス": {"app": 38, "doc": 17, "docng": 13, "itv": 15, "done": 6, "noshow": 6, "decl": 4, "fail": 3, "hired": 3, "predecl": 0, "agree": 1, "start": 0, "alert45": 8}, "2026/07|マイナビバイト": {"app": 64, "doc": 13, "docng": 30, "itv": 12, "done": 9, "noshow": 2, "decl": 2, "fail": 5, "hired": 4, "predecl": 0, "agree": 1, "start": 0, "alert45": 0}, "2026/07|indeed": {"app": 1, "doc": 1, "docng": 0, "itv": 1, "done": 1, "noshow": 0, "decl": 0, "fail": 0, "hired": 1, "predecl": 0, "agree": 1, "start": 0, "alert45": 0}, "2026/07|その他": {"app": 4, "doc": 2, "docng": 0, "itv": 4, "done": 3, "noshow": 1, "decl": 0, "fail": 1, "hired": 2, "predecl": 1, "agree": 1, "start": 0, "alert45": 0}, "2026/08|全体": {"app": 694, "doc": 218, "docng": 273, "itv": 191, "done": 135, "noshow": 39, "decl": 19, "fail": 61, "hired": 74, "predecl": 7, "agree": 11, "start": 11, "alert45": 9}, "2026/08|Airwork": {"app": 410, "doc": 159, "docng": 140, "itv": 141, "done": 103, "noshow": 24, "decl": 16, "fail": 43, "hired": 60, "predecl": 6, "agree": 9, "start": 8, "alert45": 4}, "2026/08|求人ボックス": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/08|マイナビバイト": {"app": 282, "doc": 58, "docng": 133, "itv": 48, "done": 30, "noshow": 15, "decl": 3, "fail": 17, "hired": 13, "predecl": 1, "agree": 2, "start": 3, "alert45": 5}, "2026/08|indeed": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/08|その他": {"app": 2, "doc": 1, "docng": 0, "itv": 2, "done": 2, "noshow": 0, "decl": 0, "fail": 1, "hired": 1, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/09|全体": {"app": 748, "doc": 224, "docng": 313, "itv": 182, "done": 122, "noshow": 53, "decl": 2, "fail": 72, "hired": 49, "predecl": 4, "agree": 0, "start": 12, "alert45": 10}, "2026/09|Airwork": {"app": 522, "doc": 179, "docng": 216, "itv": 148, "done": 101, "noshow": 41, "decl": 2, "fail": 58, "hired": 43, "predecl": 3, "agree": 0, "start": 10, "alert45": 5}, "2026/09|求人ボックス": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/09|マイナビバイト": {"app": 225, "doc": 44, "docng": 97, "itv": 33, "done": 20, "noshow": 12, "decl": 0, "fail": 14, "hired": 5, "predecl": 1, "agree": 0, "start": 1, "alert45": 5}, "2026/09|indeed": {"app": 0, "doc": 0, "docng": 0, "itv": 0, "done": 0, "noshow": 0, "decl": 0, "fail": 0, "hired": 0, "predecl": 0, "agree": 0, "start": 0, "alert45": 0}, "2026/09|その他": {"app": 1, "doc": 1, "docng": 0, "itv": 1, "done": 1, "noshow": 0, "decl": 0, "fail": 0, "hired": 1, "predecl": 0, "agree": 0, "start": 1, "alert45": 0}}, "ev": {"2026/04|Airwork": {"app": 170, "doc": 57, "itv": 43, "done": 31, "hired": 7}, "2026/04|求人ボックス": {"app": 2, "doc": 1, "itv": 1, "done": 1, "hired": 0}, "2026/04|マイナビバイト": {"app": 0, "doc": 0, "itv": 0, "done": 0, "hired": 0}, "2026/04|indeed": {"app": 63, "doc": 35, "itv": 41, "done": 31, "hired": 19}, "2026/04|その他": {"app": 9, "doc": 6, "itv": 5, "done": 5, "hired": 2}, "2026/05|Airwork": {"app": 206, "doc": 100, "itv": 80, "done": 55, "hired": 24}, "2026/05|求人ボックス": {"app": 84, "doc": 23, "itv": 11, "done": 6, "hired": 2}, "2026/05|マイナビバイト": {"app": 0, "doc": 0, "itv": 0, "done": 0, "hired": 0}, "2026/05|indeed": {"app": 0, "doc": 0, "itv": 1, "done": 1, "hired": 0}, "2026/05|その他": {"app": 8, "doc": 4, "itv": 5, "done": 3, "hired": 2}, "2026/06|Airwork": {"app": 278, "doc": 145, "itv": 107, "done": 66, "hired": 37}, "2026/06|求人ボックス": {"app": 122, "doc": 43, "itv": 43, "done": 20, "hired": 7}, "2026/06|マイナビバイト": {"app": 0, "doc": 0, "itv": 0, "done": 0, "hired": 0}, "2026/06|indeed": {"app": 0, "doc": 0, "itv": 0, "done": 0, "hired": 0}, "2026/06|その他": {"app": 0, "doc": 0, "itv": 0, "done": 0, "hired": 0}, "2026/07|Airwork": {"app": 393, "doc": 171, "itv": 159, "done": 109, "hired": 51}, "2026/07|求人ボックス": {"app": 38, "doc": 19, "itv": 22, "done": 7, "hired": 3}, "2026/07|マイナビバイト": {"app": 64, "doc": 13, "itv": 9, "done": 7, "hired": 3}, "2026/07|indeed": {"app": 1, "doc": 1, "itv": 1, "done": 1, "hired": 1}, "2026/07|その他": {"app": 4, "doc": 2, "itv": 3, "done": 2, "hired": 1}, "2026/08|Airwork": {"app": 410, "doc": 148, "itv": 135, "done": 99, "hired": 55}, "2026/08|求人ボックス": {"app": 0, "doc": 1, "itv": 1, "done": 0, "hired": 0}, "2026/08|マイナビバイト": {"app": 282, "doc": 56, "itv": 42, "done": 28, "hired": 11}, "2026/08|indeed": {"app": 0, "doc": 0, "itv": 0, "done": 0, "hired": 0}, "2026/08|その他": {"app": 2, "doc": 1, "itv": 3, "done": 3, "hired": 1}, "2026/09|Airwork": {"app": 522, "doc": 188, "itv": 150, "done": 108, "hired": 50}, "2026/09|求人ボックス": {"app": 0, "doc": 0, "itv": 0, "done": 0, "hired": 0}, "2026/09|マイナビバイト": {"app": 225, "doc": 44, "itv": 37, "done": 21, "hired": 8}, "2026/09|indeed": {"app": 0, "doc": 0, "itv": 0, "done": 0, "hired": 0}, "2026/09|その他": {"app": 1, "doc": 1, "itv": 1, "done": 1, "hired": 1}}, "decl": {"2026/04|全体": {"hired": 24, "decl": 14, "d30": 7}, "2026/04|その他": {"hired": 17, "decl": 11, "d30": 6}, "2026/04|Airwork": {"hired": 7, "decl": 3, "d30": 1}, "2026/05|全体": {"hired": 27, "decl": 16, "d30": 9}, "2026/05|Airwork": {"hired": 24, "decl": 13, "d30": 7}, "2026/05|その他": {"hired": 3, "decl": 3, "d30": 2}, "2026/06|全体": {"hired": 44, "decl": 15, "d30": 11}, "2026/06|その他": {"hired": 7, "decl": 2, "d30": 2}, "2026/06|Airwork": {"hired": 37, "decl": 13, "d30": 9}, "2026/07|全体": {"hired": 59, "decl": 13, "d30": 10}, "2026/07|Airwork": {"hired": 51, "decl": 12, "d30": 9}, "2026/07|その他": {"hired": 5, "decl": 1, "d30": 1}, "2026/07|マイナビバイト": {"hired": 3, "decl": 0, "d30": 0}, "2026/08|全体": {"hired": 67, "decl": 3, "d30": 2}, "2026/08|Airwork": {"hired": 55, "decl": 3, "d30": 2}, "2026/08|その他": {"hired": 1, "decl": 0, "d30": 0}, "2026/08|マイナビバイト": {"hired": 11, "decl": 0, "d30": 0}, "2026/09|全体": {"hired": 59, "decl": 8, "d30": 7}, "2026/09|Airwork": {"hired": 50, "decl": 6, "d30": 5}, "2026/09|マイナビバイト": {"hired": 8, "decl": 2, "d30": 2}, "2026/09|その他": {"hired": 1, "decl": 0, "d30": 0}}};
+const MS = ['2026/04','2026/05','2026/06','2026/07','2026/08','2026/09'];
+const ML = ['4月','5月','6月','7月','8月','9月'];
+const MEDIA = ['Airwork','マイナビバイト','求人ボックス','indeed','その他'];
+const MVAR = {'Airwork':'--s1','マイナビバイト':'--s2','求人ボックス':'--s3','indeed':'--s4','その他':'--s5','全体':'--total'};
+const AFTER = i => i >= 3;
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const coh = (m,g) => DATA.coh[m+'|'+g] || {app:0,doc:0,docng:0,itv:0,done:0,noshow:0,decl:0,fail:0,hired:0,predecl:0};
+const pct = (a,b) => b ? a/b*100 : null;
+const fmtP = v => v==null ? '–' : v.toFixed(1)+'%';
+const sum = (ms,g) => ms.reduce((t,m)=>{const c=coh(m,g);for(const k in c)t[k]=(t[k]||0)+c[k];return t},{});
+
+/* ---- KPI（Airwork 5-6月 vs 7-8月） ---- */
+function kpis(){
+  const a=sum(['2026/05','2026/06'],'Airwork'), b=sum(['2026/07','2026/08'],'Airwork');
+  const d30 = ms => { let h=0,d=0; ms.forEach(m=>{const x=DATA.decl[m+'|Airwork']; if(x){h+=x.hired;d+=x.d30;}}); return d/h*100; };
+  const items=[
+    ['書類通過率', pct(a.doc,a.app), pct(b.doc,b.app), false, '書類通過 ÷ 応募'],
+    ['書類不合格率', pct(a.docng,a.app), pct(b.docng,b.app), true, '書類不合格 ÷ 応募'],
+    ['面接合格率', pct(a.hired,a.done), pct(b.hired,b.done), false, '採用 ÷ 面接実施'],
+    ['面接ドタキャン率', pct(a.noshow,a.itv), pct(b.noshow,b.itv), true, '不参加 ÷ 面接設定'],
+    ['応募→採用率', pct(a.hired,a.app), pct(b.hired,b.app), false, '採用 ÷ 応募'],
+    ['稼働前辞退率（30日）', d30(['2026/05','2026/06']), d30(['2026/07','2026/08']), true, '採用月ベース・5〜6月採用 → 7〜8月採用'],
+  ];
+  document.getElementById('kpis').innerHTML = items.map(([l,x,y,lowGood,n])=>{
+    const dd=y-x; const cls=Math.abs(dd)<1.5?'flat':((dd<0)===lowGood?'up':'dn');
+    const arrow=Math.abs(dd)<1.5?'→':(dd>0?'▲':'▼');
+    return `<div class="kpi"><div class="lab">${l}</div><div class="row"><span class="from">${x.toFixed(1)}% →</span><span class="to">${y.toFixed(1)}%</span><span class="d ${cls}">${arrow}${Math.abs(dd).toFixed(1)}pt</span></div><div class="note">${n}</div></div>`;
+  }).join('');
+}
+
+/* ---- 共通：45h適用後の網掛け ---- */
+const shadePlugin = {
+  id:'shade45',
+  beforeDatasetsDraw(ch){
+    const {ctx,chartArea:a,scales:{x}}=ch; if(!x) return;
+    const x0 = (x.getPixelForValue(2)+x.getPixelForValue(3))/2;
+    ctx.save(); ctx.fillStyle=css('--shade'); ctx.fillRect(x0,a.top,a.right-x0,a.bottom-a.top);
+    ctx.strokeStyle=css('--muted'); ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(x0,a.top); ctx.lineTo(x0,a.bottom); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle=css('--text2'); ctx.font='11px sans-serif'; ctx.fillText('45h要件 適用後',x0+6,a.top+12);
+    ctx.restore();
+  }
+};
+const charts=[];
+function baseOpts(yPct){
+  return {
+    responsive:true, maintainAspectRatio:false, animation:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{backgroundColor:css('--surface'),titleColor:css('--text'),bodyColor:css('--text2'),borderColor:css('--border'),borderWidth:1,padding:10,
+      callbacks:{}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:css('--text2')},border:{color:css('--border')}},
+      y:{beginAtZero:true,grid:{color:css('--grid')},border:{display:false},ticks:{color:css('--muted'),callback:v=>yPct?v+'%':v}}
+    }
+  };
+}
+
+/* ---- ① 応募数 積み上げ ---- */
+function appChart(){
+  const ds = MEDIA.map(g=>({label:g,data:MS.map(m=>coh(m,g).app),backgroundColor:css(MVAR[g]),borderColor:css('--surface'),borderWidth:{top:2},borderRadius:3,borderSkipped:false,maxBarThickness:56}));
+  const o=baseOpts(false); o.scales.x.stacked=true; o.scales.y.stacked=true;
+  o.plugins.tooltip.callbacks={footer:items=>'合計 '+items.reduce((s,i)=>s+i.raw,0)+'件',label:i=>i.raw?` ${i.dataset.label}: ${i.raw}件`:null};
+  o.plugins.tooltip.footerColor=css('--text');
+  charts.push(new Chart(document.getElementById('cApp'),{type:'bar',data:{labels:ML,datasets:ds},options:o,plugins:[shadePlugin,totalLabel(m=>MEDIA.reduce((s,g)=>s+coh(m,g).app,0))]}));
+}
+const totalLabel=tot=>({id:'tot',afterDatasetsDraw(ch){const {ctx}=ch;ctx.save();ctx.fillStyle=css('--text');ctx.font='600 12px sans-serif';ctx.textAlign='center';
+  MS.forEach((m,i)=>{const t=tot(m);const meta=ch.getDatasetMeta(MEDIA.length-1);let top=Infinity;ch.data.datasets.forEach((d,k)=>{const el=ch.getDatasetMeta(k).data[i];if(el&&d.data[i])top=Math.min(top,el.y)});ctx.fillText(t,meta.data[i].x,top-6)});ctx.restore();}});
+
+/* ---- ①-2 採用数 積み上げ（採用日基準） ---- */
+const hireOf=(m,g)=>(DATA.ev[m+'|'+g]||{}).hired||0;
+function hireChart(){
+  const ds = MEDIA.map(g=>({label:g,data:MS.map(m=>hireOf(m,g)),backgroundColor:css(MVAR[g]),borderColor:css('--surface'),borderWidth:{top:2},borderRadius:3,borderSkipped:false,maxBarThickness:56}));
+  const o=baseOpts(false); o.scales.x.stacked=true; o.scales.y.stacked=true;
+  o.plugins.tooltip.callbacks={footer:items=>'合計 '+items.reduce((s,i)=>s+i.raw,0)+'人',label:i=>i.raw?` ${i.dataset.label}: ${i.raw}人`:null};
+  o.plugins.tooltip.footerColor=css('--text');
+  charts.push(new Chart(document.getElementById('cHire'),{type:'bar',data:{labels:ML,datasets:ds},options:o,plugins:[shadePlugin,totalLabel(m=>MEDIA.reduce((s,g)=>s+hireOf(m,g),0))]}));
+  const cell=(i,v)=>`<td class="${(i>=3&&i<=5)||i===7?'after':''}">${v}</td>`;
+  const row=(lab,f,cls)=>{const v=MS.map(f);const a=v.slice(0,3).reduce((x,y)=>x+y,0),b=v.slice(3).reduce((x,y)=>x+y,0);return `<tr class="${cls}"><td>${lab}</td>`+[...v,a,b].map((x,i)=>cell(i,x)).join('')+'</tr>';};
+  document.getElementById('tHire').innerHTML=head().replace('<th>項目</th>','<th>採用数（人）</th>')+'<tbody>'
+    +row('全体',m=>MEDIA.reduce((s,g)=>s+hireOf(m,g),0),'grp')+MEDIA.map(g=>row(g,m=>hireOf(m,g),'rate')).join('')+'</tbody>';
+}
+
+/* ---- ② 通過率 small multiples ---- */
+const RATES=[
+  ['書類通過率','書類通過 ÷ 応募','doc','app'],
+  ['書類不合格率','書類不合格 ÷ 応募','docng','app'],
+  ['面接設定率','面接設定 ÷ 書類通過','itv','doc'],
+  ['面接ドタキャン率','不参加(ドタキャン) ÷ 面接設定（4月は記録なし）','noshow','itv'],
+  ['面接合格率','採用 ÷ 面接実施','hired','done'],
+  ['応募→採用率','採用 ÷ 応募','hired','app'],
+];
+function rateCharts(){
+  const host=document.getElementById('rateCharts');
+  RATES.forEach(([t,def,n,d],idx)=>{
+    const box=document.createElement('div'); box.className='chartbox';
+    box.innerHTML=`<h3>${t}</h3><p class="def">${def}</p><div class="cv"><canvas></canvas></div>`;
+    host.appendChild(box);
+    const series=['全体',...MEDIA.filter(g=>g!=='その他')];
+    const ds=series.map(g=>({label:g,
+      data:MS.map((m,i)=>{const c=coh(m,g); if(n==='noshow'&&i===0) return null; return c[d]>=15?+pct(c[n],c[d]).toFixed(1):null;}),
+      _den:MS.map(m=>coh(m,g)[d]), _num:MS.map(m=>coh(m,g)[n]),
+      borderColor:css(MVAR[g]),backgroundColor:css(MVAR[g]),borderWidth:2,borderDash:g==='全体'?[6,4]:[],
+      pointRadius:4,pointHoverRadius:6,pointBorderColor:css('--surface'),pointBorderWidth:2,spanGaps:false,tension:0}));
+    const o=baseOpts(true);
+    o.plugins.tooltip.callbacks={label:i=>i.raw==null?null:` ${i.dataset.label}: ${i.raw}%（${i.dataset._num[i.dataIndex]}/${i.dataset._den[i.dataIndex]}）`};
+    charts.push(new Chart(box.querySelector('canvas'),{type:'line',data:{labels:ML,datasets:ds},options:o,plugins:[shadePlugin]}));
+  });
+}
+
+/* ---- ③ 稼働前辞退 ---- */
+function declChart(){
+  const v=MS.map(m=>{const x=DATA.decl[m+'|全体'];return x?+(x.d30/x.hired*100).toFixed(1):null});
+  const o=baseOpts(true);
+  o.plugins.tooltip.callbacks={label:i=>{const x=DATA.decl[MS[i.dataIndex]+'|全体'];return ` 30日以内辞退: ${i.raw}%（${x.d30}/${x.hired}人）`}};
+  charts.push(new Chart(document.getElementById('cDecl'),{type:'bar',data:{labels:ML.map((l,i)=>l),datasets:[{label:'全体',data:v,backgroundColor:css('--s1'),borderRadius:4,borderSkipped:'bottom',maxBarThickness:56}]},options:o,plugins:[shadePlugin,{id:'vl',afterDatasetsDraw(ch){const {ctx}=ch;ctx.save();ctx.fillStyle=css('--text');ctx.font='600 12px sans-serif';ctx.textAlign='center';ch.getDatasetMeta(0).data.forEach((el,i)=>{if(v[i]!=null)ctx.fillText(v[i]+'%',el.x,el.y-6)});ctx.restore();}}]}));
+  const rows=[['全体','全体'],['Airwork','Airwork'],['マイナビバイト','マイナビバイト'],['その他媒体','その他']];
+  let h='<thead><tr><th>採用月</th>'+ML.map((l,i)=>`<th class="${AFTER(i)?'after':''}">${l}</th>`).join('')+'</tr></thead><tbody>';
+  rows.forEach(([lab,g])=>{
+    h+=`<tr class="grp"><td>${lab}：採用数</td>`+MS.map((m,i)=>{const x=DATA.decl[m+'|'+g];return `<td class="${AFTER(i)?'after':''}${x?'':' na'}">${x?x.hired:'–'}</td>`}).join('')+'</tr>';
+    h+=`<tr class="rate"><td>30日以内の稼働前辞退</td>`+MS.map((m,i)=>{const x=DATA.decl[m+'|'+g];return `<td class="${AFTER(i)?'after':''}">${x?`${x.d30}人（${(x.d30/x.hired*100).toFixed(0)}%）`:'–'}</td>`}).join('')+'</tr>';
+    h+=`<tr class="rate"><td>稼働前辞退（期間を問わず）</td>`+MS.map((m,i)=>{const x=DATA.decl[m+'|'+g];return `<td class="${AFTER(i)?'after':''}">${x?`${x.decl}人（${(x.decl/x.hired*100).toFixed(0)}%）`:'–'}</td>`}).join('')+'</tr>';
+  });
+  document.getElementById('tDecl').innerHTML=h+'</tbody>';
+}
+
+/* ---- ④⑤ 表 ---- */
+const TABS=['全体',...MEDIA];
+function tabs(id,render){
+  const el=document.getElementById(id);
+  el.innerHTML=TABS.map((g,i)=>`<button type="button" aria-pressed="${i===0}" data-g="${g}">${g}</button>`).join('');
+  el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));render(b.dataset.g)});
+  render('全体');
+}
+const head=()=>'<thead><tr><th>項目</th>'+ML.map((l,i)=>`<th class="${AFTER(i)?'after':''}">${l}</th>`).join('')+'<th>4〜6月</th><th class="after">7〜9月</th></tr></thead>';
+function cohTable(g){
+  const cols=[...MS.map(m=>coh(m,g)), sum(MS.slice(0,3),g), sum(MS.slice(3),g)];
+  const cell=(i,v)=>`<td class="${(i>=3&&i<=5)||i===7?'after':''}">${v}</td>`;
+  const cnt=(lab,k)=>`<tr class="grp"><td>${lab}</td>`+cols.map((c,i)=>cell(i,c[k]||0)).join('')+'</tr>';
+  const rate=(lab,n,d)=>`<tr class="rate"><td>${lab}</td>`+cols.map((c,i)=>cell(i,fmtP(pct(c[n]||0,c[d]||0)))).join('')+'</tr>';
+  let h=head()+'<tbody>'+cnt('応募','app')+cnt('書類通過','doc')+rate('書類通過率（÷応募）','doc','app')+cnt('書類不合格','docng')+rate('書類不合格率（÷応募）','docng','app')
+    +cnt('面接設定','itv')+rate('面接設定率（÷書類通過）','itv','doc')+cnt('面接実施','done')+rate('面接実施率（÷面接設定）','done','itv')
+    +cnt('ドタキャン','noshow')+rate('ドタキャン率（÷面接設定）','noshow','itv')+cnt('面接辞退','decl')+rate('面接辞退率（÷面接設定）','decl','itv')
+    +cnt('面接不合格','fail')+cnt('採用','hired')+rate('面接合格率（÷面接実施）','hired','done')+rate('応募→採用率','hired','app')+'</tbody>';
+  document.getElementById('tCoh').innerHTML=h;
+}
+function evTable(g){
+  const get=(m)=>{ if(g!=='全体') return DATA.ev[m+'|'+g]; return MEDIA.reduce((t,x)=>{const e=DATA.ev[m+'|'+x];for(const k in e)t[k]=(t[k]||0)+e[k];return t},{}); };
+  const cols=MS.map(get); const s=ms=>ms.reduce((t,c)=>{for(const k in c)t[k]=(t[k]||0)+c[k];return t},{});
+  cols.push(s(cols.slice(0,3)),s(cols.slice(3,6)));
+  const cell=(i,v)=>`<td class="${(i>=3&&i<=5)||i===7?'after':''}">${v}</td>`;
+  const row=(lab,k)=>`<tr class="grp"><td>${lab}</td>`+cols.map((c,i)=>cell(i,c[k]||0)).join('')+'</tr>';
+  document.getElementById('tEv').innerHTML=head()+'<tbody>'+row('応募（応募日）','app')+row('書類通過（書類通過日）','doc')+row('面接設定（面接日）','itv')+row('面接実施（面接日）','done')+row('採用（採用日）','hired')+'</tbody>';
+}
+
+function legends(){
+  document.getElementById('lgBar').innerHTML=MEDIA.map(g=>`<span><i class="sq" style="background:var(${MVAR[g]})"></i>${g}</span>`).join('');
+  document.getElementById('lgHire').innerHTML=document.getElementById('lgBar').innerHTML;
+  document.getElementById('lgLine').innerHTML=`<span><i class="dash"></i>全体</span>`+MEDIA.filter(g=>g!=='その他').map(g=>`<span><i style="background:var(${MVAR[g]})"></i>${g}</span>`).join('');
+}
+function drawAll(){ charts.splice(0).forEach(c=>c.destroy()); document.getElementById('rateCharts').innerHTML=''; Chart.defaults.font.family=getComputedStyle(document.body).fontFamily; appChart(); hireChart(); rateCharts(); declChart(); }
+
+kpis(); legends(); tabs('tabsCoh',cohTable); tabs('tabsEv',evTable); drawAll();
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = dark?'light':'dark'; drawAll();
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
+</script>
+</body>
+</html>
