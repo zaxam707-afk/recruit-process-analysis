@@ -104,7 +104,7 @@ td.na{color:var(--muted)}
         <li><strong>面接に進んだ人の合格率はむしろ上がった</strong>：Airwork 48.5% → 53.5%（7〜8月）。事前に絞られた分、面接の歩留まりが良くなっている。</li>
         <li><strong>稼働前辞退が大きく減った</strong>：採用から30日以内の辞退は 4〜6月採用で 25〜33% → 7月採用 17% → 8月採用 3% → 9月採用 12%。45h要件の狙い（稼働意欲の高い人を採る）に合う動き。</li>
         <li><strong>応募→採用率は横ばい</strong>：全体 10.6% → 11.6%（7〜8月）。入口が絞られた分を面接合格率の上昇が打ち消している。採用数（採用日基準）が月28〜44人 → 59〜67人に増えたのは、応募数の増加（月300→700件前後）による。</li>
-        <li><strong>原稿を1本足すなら Airwork</strong>：今の実績では、1本あたりの月の採用は Airwork が約17人、マイナビバイトが約9人。マイナビバイトは応募は多いが（月約250件）、書類通過率と面接合格率が低く、1人採用するのに Airwork の約3倍の応募をさばく必要がある（詳細は ④）。</li>
+        <li><strong>原稿を1本足すなら Airwork</strong>：今の実績では、1本あたりの月の採用は Airwork が約17人、マイナビバイトが約9人。マイナビバイトは応募は多いが（月約250件）、書類通過率と面接合格率が低く、1人採用するのに Airwork の約3倍の応募をさばく必要がある。<strong>採用CPA は Airwork 約0.9万円 vs マイナビバイト 約2.5万円</strong>（1本あたり月額 Airwork 15万円・マイナビバイト 22.3万円で計算。詳細は ④）。</li>
         <li><strong>注意すべき悪化</strong>：面接ドタキャン率が 14.2% → 18.7%（7〜8月）→ 29.1%（9月）と上昇。マイナビバイト（7月〜）の書類通過率が 20%前後と低く、全体の数字を押し下げている。</li>
       </ul>
     </div>
@@ -149,10 +149,16 @@ td.na{color:var(--muted)}
     <div class="cv tall"><canvas id="cAddon"></canvas></div>
     <div class="tblwrap" style="margin-top:12px"><table id="tAddon"></table></div>
     <div class="tblwrap" style="margin-top:16px"><table id="tAddonLoad"></table></div>
+    <h3 style="font-size:1rem;margin:24px 0 2px">獲得CPA（原稿1本あたりの月額費用 ÷ 1か月の獲得数）</h3>
+    <p class="def" style="font-size:.8rem;color:var(--muted);margin:0 0 8px">費用：Airwork 150,000円／本・月、マイナビバイト 223,000円／本・月（いただいた金額）。獲得数は上の試算値。</p>
+    <div class="kpis" id="cpaKpis" style="margin-top:6px"></div>
+    <div class="legend" style="margin-top:16px"><span><i class="sq" style="background:var(--s1)"></i>Airwork</span><span><i class="sq" style="background:var(--s2)"></i>マイナビバイト</span></div>
+    <div class="cv"><canvas id="cCpa"></canvas></div>
+    <div class="tblwrap" style="margin-top:12px"><table id="tCpa"></table></div>
     <ul class="caveat" style="margin-top:14px">
       <li><strong>単純に足し算できるとは限らない</strong>：同じ媒体に原稿を増やすと、既存の原稿と応募者を取り合う可能性がある。実際、原稿数と応募数は比例していない（6月は Airwork 7本で応募278件、7月は3本で393件）。4本目の Airwork 原稿は、平均どおりには伸びない前提で見ること。</li>
       <li><strong>Airwork は原稿ごとの差が大きい</strong>：採用は月12.5〜25人。「コール・営業経験歓迎」が最も採用につながっている。どの訴求で足すかで結果が変わる。</li>
-      <li><strong>費用は含めていない</strong>：媒体ごとに課金方式が違うため、1採用あたりの単価を比べるには各媒体の費用実績が必要。</li>
+      <li><strong>費用は1本あたりの月額（Airwork 15万円・マイナビバイト 22.3万円）で計算</strong>：Airwork が実際にはクリック課金で月ごとに変動する場合、CPA もその分ぶれる。</li>
       <li>9月応募分は面接・採用がまだ一部進行中のため、採用数はやや少なめに出ている（両媒体とも同じ条件）。辞退は採用から30日以内の稼働前辞退。</li>
     </ul>
   </section>
@@ -299,6 +305,23 @@ function addon(){
   const L=[['応募','app'],['書類選考（通過）','doc'],['面接設定','itv'],['面接実施','done']];
   document.getElementById('tAddonLoad').innerHTML='<thead><tr><th>1人採用するのに必要な件数</th><th>Airwork</th><th>マイナビバイト</th><th>倍率（マイナビ ÷ Airwork）</th></tr></thead><tbody>'+
     L.map(([l,k])=>{const x=aw[k]/aw.hired,y=mn[k]/mn.hired;return `<tr class="grp"><td>${l}</td><td>${x.toFixed(1)}</td><td>${y.toFixed(1)}</td><td>${(y/x).toFixed(1)}倍</td></tr>`}).join('')+'</tbody>';
+  /* 獲得CPA */
+  const COST={aw:150000,mn:223000};
+  const yen=v=>'¥'+Math.round(v).toLocaleString('ja-JP');
+  const CS=[['応募CPA','app'],['書類通過CPA','doc'],['面接設定CPA','itv'],['面接実施CPA','done'],['採用CPA','hired'],['採用CPA（30日以内辞退を除く）','net']];
+  const ca=CS.map(([,k])=>COST.aw/a[k]), cm=CS.map(([,k])=>COST.mn/m[k]);
+  document.getElementById('cpaKpis').innerHTML=[0,4,5].map(i=>`<div class="kpi"><div class="lab">${CS[i][0]}</div><div class="row"><span class="from">Airwork</span><span class="to">${yen(ca[i])}</span></div><div class="row" style="margin-top:0"><span class="from">マイナビバイト</span><span class="to">${yen(cm[i])}</span></div><div class="note">マイナビバイトは Airwork の ${(cm[i]/ca[i]).toFixed(1)}倍</div></div>`).join('');
+  const o2=baseOpts(false); o2.indexAxis='y'; o2.scales={x:{beginAtZero:true,grid:{color:css('--grid')},border:{display:false},ticks:{color:css('--muted'),callback:v=>'¥'+v.toLocaleString('ja-JP')}},y:{grid:{display:false},ticks:{color:css('--text2')},border:{color:css('--border')}}};
+  o2.plugins.tooltip.callbacks={label:i=>` ${i.dataset.label}: ${yen(i.raw)}`};
+  const vl3={id:'vl3',afterDatasetsDraw(ch){const {ctx}=ch;ctx.save();ctx.fillStyle=css('--text');ctx.font='600 11px sans-serif';ctx.textBaseline='middle';
+    ch.data.datasets.forEach((d,k)=>ch.getDatasetMeta(k).data.forEach((el,i)=>ctx.fillText(yen(d.data[i]),el.x+5,el.y)));ctx.restore();}};
+  const b2=(lab,v,col)=>({label:lab,data:v,backgroundColor:css(col),borderColor:css('--surface'),borderWidth:1,borderRadius:3,borderSkipped:'left',barPercentage:.8,categoryPercentage:.7});
+  const idx=[0,3,4];
+  o2.layout={padding:{right:70}};
+  charts.push(new Chart(document.getElementById('cCpa'),{type:'bar',data:{labels:idx.map(i=>CS[i][0]),datasets:[b2('Airwork',idx.map(i=>ca[i]),'--s1'),b2('マイナビバイト',idx.map(i=>cm[i]),'--s2')]},options:o2,plugins:[vl3]}));
+  document.getElementById('tCpa').innerHTML='<thead><tr><th>獲得単価</th><th>Airwork</th><th>マイナビバイト</th><th>倍率（マイナビ ÷ Airwork）</th></tr></thead><tbody>'
+    +`<tr class="rate"><td>月額費用（1本）</td><td>${yen(COST.aw)}</td><td>${yen(COST.mn)}</td><td>${(COST.mn/COST.aw).toFixed(2)}倍</td></tr>`
+    +CS.map(([l],i)=>`<tr class="grp"><td>${l}</td><td>${yen(ca[i])}</td><td>${yen(cm[i])}</td><td>${(cm[i]/ca[i]).toFixed(1)}倍</td></tr>`).join('')+'</tbody>';
 }
 
 /* ---- ② 通過率 small multiples ---- */
